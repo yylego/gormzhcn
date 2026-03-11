@@ -1,0 +1,64 @@
+package gormzhcn
+
+import (
+	"testing"
+
+	"github.com/yylego/gormzhcn/internal/tests"
+	"github.com/stretchr/testify/require"
+	"github.com/yylego/runpath"
+	"gorm.io/gorm"
+)
+
+/*
+在 Gorm 里 unique 和 uniqueIndex 在 GORM 中确实有区别：
+
+unique:
+这个标签表示为字段添加一个唯一性约束，但它不一定会为这个约束生成一个命名的索引。数据库会确保字段值唯一，但索引的命名和管理通常由数据库引擎自动处理，因此不一定会出现一个独立命名的唯一索引。
+
+uniqueIndex:
+这个标签不仅表示字段的唯一性，还明确要求 GORM 生成一个带有名称的唯一索引。通常会按照 idx_<table_name>_<column_name> 的格式生成索引名称（具体格式可能因数据库而异）。
+*/
+type Example3 struct {
+	V身份证号 string `gorm:"column:person_num;primaryKey"`
+	V学校编号 string `gorm:"column:school_num;uniqueIndex:udx_student_unique"`
+	V班级编号 string `gorm:"column:class_num;uniqueIndex:udx_student_unique"`
+	V班内排名 string `gorm:"column:student_num;uniqueIndex:udx_student_unique"`
+	V姓名   string `gorm:"column:name;index" mom:"mcp:S63"`      //普通索引，默认名称不正确（现在的默认名称带中文）
+	V年龄   int    `gorm:"column:age;unique" mom:"mcp:S63"`      //唯一约束，而非唯一索引，默认名称正确，使用的还是 uni_param_example3_age 这个约束名
+	V性别   bool   `gorm:"column:sex;uniqueIndex" mom:"mcp:S63"` //唯一索引，带名称，默认名称不正确（现在的默认名称带中文）
+}
+
+func TestDB创建新表的试探(t *testing.T) {
+	tests.NewDBRun(t, func(db *gorm.DB) {
+		require.NoError(t, db.Session(&gorm.Session{
+			DryRun: true,
+		}).AutoMigrate(&Example3{}))
+	})
+}
+
+func TestT编码器_Get预览代码_改索引名(t *testing.T) {
+	cfg := NewT编码器(NewT表结构V2[Example3](runpath.CurrentPath()), NewT配置项())
+	t.Log(cfg)
+
+	result := cfg.Get预览代码()
+	t.Log(string(result.NewCode))
+}
+
+type Example4 struct {
+	V证号 string `gorm:"primaryKey"`
+	V姓名 string `gorm:"index"`
+	V年龄 int    `gorm:"unique"`
+	V性别 bool   `gorm:"column:sex;uniqueIndex" mom:"mcp:S63"`
+}
+
+func (*Example4) TableName() string {
+	return "example4"
+}
+
+func TestT编码器_Get预览代码_改索引名_2(t *testing.T) {
+	cfg := NewT编码器(NewT表结构V2[Example4](runpath.CurrentPath()), NewT配置项())
+	t.Log(cfg)
+
+	result := cfg.Get预览代码()
+	t.Log(string(result.NewCode))
+}
