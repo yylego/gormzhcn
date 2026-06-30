@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/yylego/gormzhcn/internal/examples/example1/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/yylego/done"
 	"github.com/yylego/gormrepo"
 	"github.com/yylego/gormrepo/gormclass"
+	"github.com/yylego/gormzhcn/internal/examples/example1/internal/models"
 	"github.com/yylego/neatjson/neatjsons"
 	"github.com/yylego/rese"
 	"gorm.io/driver/sqlite"

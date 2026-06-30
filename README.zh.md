@@ -5,11 +5,11 @@
 [![GitHub Release](https://img.shields.io/github/release/yylego/gormzhcn.svg)](https://github.com/yylego/gormzhcn/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yylego/gormzhcn)](https://goreportcard.com/report/github.com/yylego/gormzhcn)
 
-# 🇨🇳 GORMZHCN - GORM 完整中文编程接口
+# 🇨🇳 GORMZHCN - GORM 中文命名把关器
 
-**gormzhcn** 是 **GORM 生态系统的完整中文编程接口**，为中文开发者提供纯中文 API 的类型安全数据库开发体验。基于强大的 gormmom 原生语言引擎构建。
+**gormzhcn** 是 gormmom 命名校验的**中文本地化封装**。用母语中文字段编写 GORM 模型，再**把关**模型产出的每一个数据库名字——表名、每个列名、每个索引名——都是数据库安全的，全程通过直观的中文类型名和方法名完成。它作为一个普通单元测试运行，**完全不连接数据库**。
 
-> 🎯 **中文语言解放**: 使用中文原生字段名编程 - gormzhcn 连接中文业务术语和数据库需求。
+> 🎯 **用中文编程，交付数据库安全的表结构。** gormzhcn 在中文命名进入数据库之前，就替你抓出数据库会拒绝的那些名字。
 
 ## 生态系统
 
@@ -22,6 +22,7 @@
 ## 英文文档
 
 [ENGLISH README](README.md)
+
 <!-- TEMPLATE (ZH) END: LANGUAGE NAVIGATION -->
 
 ---
@@ -29,6 +30,22 @@
 ## 免责声明
 
 使用中文编写 Go 代码在技术上可行，但在实际工程中极不推荐。这种做法不适用于任何正式或商业场景，采用它的团队或公司可能面临同行的轻视和行业的负面评价，在商业公司中尤其可能成为被业内议论的对象。该项目仅供学习和研究，请勿在正式工程中采用。
+
+---
+
+## 🤖 为什么 gormzhcn 现在只是个把关器（AI 时代的简化）
+
+gormzhcn 过去封装的是一个**生成引擎**：你用中文写字段、把 tag 留空，它替你自动拼出列名和索引名（拼音和基于模式的编码）。
+
+**AI 时代让这种生成失去了意义。** 今天，你定义字段的那一刻，AI 助手就能直接、结合上下文，替你写出一个又好又数据库安全的列名——远比任何固定规则引擎拼出来的强。机器生成的 `z_zhang_hao` 从来就不是谁真正想要的。于是整个生成层就没有存在的理由了。
+
+而 AI **不会**自动替你保证的，恰恰是那个仍然会咬你一口的环节：**校验**。当你用中文编程时，GORM 可能把字段变成一个非 ASCII 的列名，或者用中文字段名拼出一个复合索引名——这两种数据库都会拒绝。这种问题暴露得很晚，往往是在迁移或运行时才炸。
+
+所以 gormzhcn 彻底砍掉了生成，现在只做一件事：**在一个不连数据库的单元测试里，把这些命名问题抓出来**，让它们不会在后面才爆炸。
+
+- ❌ 已移除：代码生成、拼音/模式列名拼装、旧的编码器类型。
+- ✅ 已保留：唯一职责——校验表名 / 列名 / 索引名是否数据库安全。
+- ✅ 零数据库连接——一个纯静态检查，作为普通单元测试运行。
 
 ---
 
@@ -40,265 +57,112 @@ go get github.com/yylego/gormzhcn
 
 ---
 
-## 🔄 技术对比
-
-| 生态系统            | Java MyBatis Plus  | Python SQLAlchemy | Go GORM 生态系统   |
-|--------------------|--------------------|--------------------|-------------------|
-| **类型安全列**      | `Example::getName` | `Example.name`     | `cls.Name.Eq()`   |
-| **代码生成**        | ✅ 插件支持         | ✅ 反射机制         | ✅ AST 精准生成    |
-| **仓储模式**        | ✅ BaseMapper       | ✅ Session API     | ✅ GormRepo        |
-| **原生语言**        | 🟡 有限支持         | 🟡 有限支持        | ✅ 完整支持        |
-
----
-
 ## 🌟 问题与解决方案
 
-### ⚡ 传统方式
+### ⚡ 中文母语模型的陷阱
+
+中文字段读起来很自然，但 GORM 从中推导出的名字，可能正是数据库拒绝的名字：
+
 ```go
-// ❌ 常见方式：开发者只能使用英文命名
-type Account struct {
-    ID       uint   `gorm:"primaryKey"`
-    Username string `gorm:"column:username;uniqueIndex"`
-    Nickname string `gorm:"column:nickname;index"`
-    Age      int    `gorm:"column:age"`
-    PhoneNum string `gorm:"column:phone_num"`
-    Mailbox  string `gorm:"column:mailbox"`
-    Address  string `gorm:"column:address"`
-    Status   string `gorm:"column:status;index"`
+type T账户信息 struct {
+    ID   uint   `gorm:"primaryKey"`
+    Z账号 string `gorm:"uniqueIndex"` // ❌ 没写索引名 → GORM 用字段名拼索引 → 非 ASCII → 被拒绝
+    N昵称 string `gorm:""`            // ❌ 没写列名 → 列名落到非 ASCII → 被拒绝
 }
 ```
 
-### ✅ GORMZHCN 解决方案
+### ✅ gormzhcn 的做法
+
+保留中文字段名，但显式给出数据库安全的列名 / 索引名 / 表名——然后让 gormzhcn 在单元测试里替你把关：
+
 ```go
-// ✅ GORMZHCN：使用中文原生业务字段名编程！
 type T账户信息 struct {
     ID   uint   `gorm:"primaryKey"`
-    Z账号 string `gorm:"uniqueIndex"`
-    N昵称 string `gorm:"index"`
-    A年龄 int    `gorm:""`
-    D电话 string `gorm:""`
-    E邮箱 string `gorm:""`
-    J住址 string `gorm:""`
-    S状态 string `gorm:"index"`
+    Z账号 string `gorm:"column:account;uniqueIndex:udx_account"`
+    N昵称 string `gorm:"column:nickname;index:idx_nickname"`
+    A年龄 int    `gorm:"column:age"`
+    S状态 string `gorm:"column:status;index:idx_status"`
 }
 
 func (*T账户信息) TableName() string {
-    return "accounts" // 数据库兼容表名
+    return "accounts" // 数据库安全的 ASCII 表名
 }
 ```
 
 ---
 
-## 💡 核心特性
+## 🛠️ 使用方法 —— 在单元测试里校验
 
-### 🌍 语言支持
-- **中文 Unicode 兼容**：原生中文字段名和业务术语
-- **智能映射**：中文名到数据库安全列名的转换
-- **确定性输出**：跨运行的一致生成结果
-- **Go 导出规则**：大写前缀（如 `V用户名`、`V姓名`）
-
-### 🤖 智能生成
-- **自动 GORM 标签**：`column`、`index`、`uniqueIndex` 等
-- **命名模式**：`S63 编码`、`拼音`、自定义格式
-- **索引管理**：带自动生成的描述性名称
-- **标签保留**：添加新标签时保持现有标签
-
-### ⚠️ 使用要求
-- **结构体命名**：以大写开头 `type T账户信息`（Go 导出规则）
-- **TableName() 方法**：必需，避免 `regexp does not match` 错误
-- **两遍生成**：第一遍更新标签，第二遍生成方法
-
----
-
-## 🎯 快速开始
-
-### 1. 自动标签生成
-
-gormzhcn 执行后，结构体获得数据库兼容的列标签：
+gormzhcn 从不连接数据库，它作为一个普通单元测试运行：
 
 ```go
-// 生成带数据库兼容列名的结构体
-type T账户信息 struct {
-    ID    uint   `gorm:"primaryKey"`
-    Z账号  string `gorm:"column:z_zhang_hao;uniqueIndex"`
-    N昵称  string `gorm:"column:n_ni_cheng;index"`
-    A年龄  int    `gorm:"column:a_nian_ling"`
-    D电话  string `gorm:"column:d_dian_hua"`
-    E邮箱  string `gorm:"column:e_you_xiang"`
-    J住址  string `gorm:"column:j_zhu_zhi"`
-    S状态  string `gorm:"column:s_zhuang_tai;index"`
+func TestValidateNaming(t *testing.T) {
+    objects := []interface{}{
+        &T账户信息{},
+    }
+
+    // 批量把关：表名 / 列名 / 索引名都必须数据库安全
+    require.NoError(t, gormzhcn.NewT模型校验器(objects, gormzhcn.NewT配置项()).Validate())
+
+    // 也可以单独校验一个模型
+    require.NoError(t, gormzhcn.NewT校验器(&T账户信息{}, gormzhcn.NewT配置项()).Validate())
 }
 ```
 
-### 2. 生成命令
-
-```bash
-# 第一步：为原生语言字段生成 GORM 标签
-go test -v -run TestGen/GenGormMom
-
-# 第二步：生成类型安全列方法（使用 gormcngen）
-go test -v -run TestGen/GenGormCnm
-```
-
-### 3. 使用类型安全查询
-```go
-// 创建 repo
-repo := gormrepo.NewGormRepo(&T账户信息{}, (&T账户信息{}).Columns())
-
-// 查询 - First（按账号）
-account, err := repo.With(ctx, db).First(func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-    return db.Where(cls.Z账号.Eq("wang-xiao-ming"))
-})
-
-// 查询 - First（按昵称）
-account, err := repo.With(ctx, db).First(func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-    return db.Where(cls.N昵称.Eq("王小明"))
-})
-
-// 查询 - Find
-accounts, err := repo.With(ctx, db).Find(func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-    return db.Where(cls.A年龄.Gte(18))
-})
-
-// 查询 - FindPage
-accounts, err := repo.With(ctx, db).FindPage(
-    func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-        return db.Where(cls.A年龄.Gte(18))
-    },
-    func(cls *T账户信息Columns) gormcnm.OrderByBottle {
-        return cls.ID.OrderByBottle("DESC")
-    },
-    &gormrepo.Pagination{Limit: 10, Offset: 0},
-)
-
-// 创建
-err := repo.With(ctx, db).Create(&T账户信息{Z账号: "han-mei-mei", N昵称: "韩梅梅", A年龄: 25})
-
-// 更新
-err := repo.With(ctx, db).Updates(
-    func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-        return db.Where(cls.ID.Eq(1))
-    },
-    func(cls *T账户信息Columns) map[string]interface{} {
-        return cls.Kw(cls.A年龄.Kv(26)).AsMap()
-    },
-)
-
-// 删除
-err := repo.With(ctx, db).DeleteW(func(db *gorm.DB, cls *T账户信息Columns) *gorm.DB {
-    return db.Where(cls.ID.Eq(1))
-})
-```
-
-### 4. 自动标签生成原理
-
-创建测试文件来运行标签生成，将中文字段名转换为数据库兼容的列标签：
+校验失败会返回一个清晰的错误，指出是哪个结构体、哪个名字出了问题（涉及具体字段时也会一并指出）——远在任何迁移发生之前就被抓住。名字长度上限和 GORM 命名策略都可以调：
 
 ```go
-func TestGen(t *testing.T) {
-    // 第一步：为中文语言字段生成 GORM 标签
-    t.Run("GenGormMom", func(t *testing.T) {
-        srcPath := runpath.PARENT.Join("models.go")
-        t.Log(srcPath)
-
-        param := gormzhcn.NewT表结构V2[T账户信息](srcPath)
-        cfg := gormzhcn.NewT编码器(param, gormzhcn.NewT配置项())
-        cfg.Gen替换源码()
-    })
-
-    // 第二步：生成类型安全列方法
-    t.Run("GenGormCnm", func(t *testing.T) {
-        absPath := osmustexist.FILE(runtestpath.SrcPath(t))
-        t.Log(absPath)
-
-        options := gormcngen.NewOptions().
-            WithColumnClassExportable(true).
-            WithColumnsMethodRecvName("T").
-            WithColumnsCheckFieldType(true)
-        cfg := gormcngen.NewConfigs([]interface{}{&T账户信息{}}, options, absPath)
-        cfg.Gen()
-    })
-}
+v配置项 := gormzhcn.NewT配置项().
+    With最大名字长度(63).                  // 名字长度上限（Postgres 为 63）
+    With命名策略(schema.NamingStrategy{}) // 项目用了自定义命名策略时传进来
 ```
-
-查看 [examples](internal/examples/) 目录获取完整配置。
 
 ---
 
-## 🔧 配置和使用
+## 🤝 配合生态使用
+
+gormzhcn 负责把关命名，兄弟包负责类型安全列和 CRUD。一个典型流程，全程中文：
+
+**1. 定义中文模型**，给出显式的数据库安全名字（见上）：一个 `T学生`，字段 `V名字`、`V性别`、`V班级编码`……
+
+**2. 用 gormzhcn 把关命名**——不连数据库的单元测试：
 
 ```go
-// 同时处理多个结构体
-srcPath := runpath.PARENT.Join("models.go")
-p表结构1 := gormzhcn.NewT表结构V2[T学生](srcPath)
-p表结构2 := gormzhcn.NewT表结构V2[T班级](srcPath)
-
-cfg := gormzhcn.NewT批量编码器([]*gormzhcn.T表结构{
-    p表结构1,
-    p表结构2,
-}, gormzhcn.NewT配置项())
-
-result := cfg.Gen替换源码()
-if result.Has有变化() {
-    // 标签已更新
-}
+require.NoError(t, gormzhcn.NewT模型校验器([]interface{}{&T学生{}}, gormzhcn.NewT配置项()).Validate())
 ```
 
-### 配置选项
+**3. 用 [gormcngen](https://github.com/yylego/gormcngen) 生成类型安全列**：
 
 ```go
-options := gormzhcn.NewT配置项().
-    With命名总标签名("mom").           // 系统标签名
-    With列名模式标签("mcp").           // 列命名子标签
-    With列名命名样式(pattern).         // 列命名模式
-    With重新命名索引(true)             // 自动重命名索引
+gormcngen.NewConfigs([]interface{}{&T学生{}}, gormcngen.NewOptions().WithUseTagName(true), srcPath).Gen()
+// → 生成带中文访问器的 T学生Columns：V名字、V性别、V班级编码……
 ```
 
-查看 [examples](internal/examples/) 目录获取完整示例。
+**4. 用 [gormrepo](https://github.com/yylego/gormrepo) 通过中文列查询**：
+
+```go
+repo := gormrepo.NewRepo(gormclass.Use(&T学生{}))
+student, err := repo.Repo(db).First(func(db *gorm.DB, cls *T学生Columns) *gorm.DB {
+    return db.Where(cls.V名字.Eq("杨亦乐"))
+})
+```
+
+完整可运行的示例都在 [examples](internal/examples/) 里。
 
 ---
 
-## 🔧 完整 API 参考
+## 🔧 API 参考
 
-### T编码器（单结构体）
-
-| 中文方法 | 封装方法 | 参数 | 返回值 | 描述 |
-|---------|--------|------|--------|------|
-| `NewT编码器` | `gormmom.NewConfig` | `v表结构, v配置项` | `*T编码器` | 创建编码器 |
-| `Gen替换源码` | `config.Generate` | 无 | 无 | 生成并替换 |
-| `Get预览代码` | `config.Preview` | 无 | `*R替换的结果` | 预览变化 |
-
-### T批量编码器（批量处理）
-
-| 中文方法 | 封装方法 | 参数 | 返回值 | 描述 |
-|---------|--------|------|--------|------|
-| `NewT批量编码器` | `NewT编码器` 循环 | `v表结构s, v配置项` | `*T批量编码器` | 创建批量编码器 |
-| `Gen替换源码` | `configs.Generate` | 无 | `*R批量替换的结果` | 批量生成 |
-| `Get预览代码` | `configs.Preview` | 无 | `*R批量替换的结果` | 批量预览 |
-| `Validate验证标签` | `configs.ValidateGormTags` | 无 | `error` | 验证标签 |
-
-### T表结构（表结构定义）
-
-| 中文方法 | 封装方法 | 参数 | 返回值 | 描述 |
-|---------|--------|------|--------|------|
-| `NewT表结构` | `gormmom.NewGormStruct` | `sourcePath, structName, schema` | `*T表结构` | 基础创建 |
-| `NewT表结构V2[T]` | `gormmom.ParseStruct[T]` | `sourcePath` | `*T表结构` | 从泛型创建 |
-| `NewT表结构V3` | `gormmom.ParseObject` | `sourcePath, object` | `*T表结构` | 从对象创建 |
-| `NewT表结构s` | `gormmom.ParseObjects` | `root, objects` | `[]*T表结构` | 批量创建 |
-
-### T配置项（配置选项）
-
-| 中文方法 | 封装方法 | 参数 | 返回值 | 描述 |
-|---------|--------|------|--------|------|
-| `NewT配置项` | `gormmom.NewOptions` | 无 | `*T配置项` | 创建配置 |
-| `With命名总标签名` | `WithTagName` | `systemTagName` | `*T配置项` | 设置系统标签 |
-| `With列名模式标签` | `WithSubTagName` | `subTagName` | `*T配置项` | 设置列标签 |
-| `With列名命名样式` | `WithColumnPattern` | `pattern` | `*T配置项` | 设置列模式 |
-| `With默认列名样式` | `WithDefaultColumnPattern` | `pattern` | `*T配置项` | 设置默认列 |
-| `With跳过基本列名` | `WithSkipBasicColumnName` | `skip` | `*T配置项` | 跳过基本字段 |
-| `With重新命名索引` | `WithAutoIndexName` | `rename` | `*T配置项` | 自动重命名索引 |
-| `With索引命名样式` | `WithIndexPattern` | `pattern` | `*T配置项` | 设置索引模式 |
-| `With默认索引样式` | `WithDefaultIndexPattern` | `pattern` | `*T配置项` | 设置默认索引 |
+| 中文名                            | 封装                 | 说明                     |
+| --------------------------------- | -------------------- | ------------------------ |
+| `NewT模型校验器(objects, 配置项)` | `gormmom.NewConfigs` | 构造批量校验器           |
+| `T模型校验器.Validate()`          | `Configs.Validate`   | 校验整批模型             |
+| `NewT校验器(object, 配置项)`      | `gormmom.NewConfig`  | 构造单模型校验器         |
+| `T校验器.Validate()`              | `Config.Validate`    | 校验单个模型             |
+| `NewT配置项()`                    | `gormmom.NewOptions` | 构造配置                 |
+| `With最大名字长度(n)`             | `WithMaxNameLength`  | 设置名字长度上限         |
+| `With命名策略(namer)`             | `WithNamingStrategy` | 设置 GORM 命名策略       |
+| `GetOptions()`                    | —                    | 取底层 `gormmom.Options` |
 
 ---
 
@@ -311,10 +175,10 @@ options := gormzhcn.NewT配置项().
 - **[gormcnm](https://github.com/yylego/gormcnm)** - GORM 基础包，提供类型安全列和语句构建
 - **[gormcngen](https://github.com/yylego/gormcngen)** - 基于 AST 的代码生成，支持类型安全 GORM 操作
 - **[gormrepo](https://github.com/yylego/gormrepo)** - 仓储模式实现，遵循 GORM 最佳实践
-- **[gormmom](https://github.com/yylego/gormmom)** - 原生语言 GORM 标签生成引擎，支持名称映射
-- **[gormzhcn](https://github.com/yylego/gormzhcn)** - 完整的 GORM 中文编程接口（本包）
+- **[gormmom](https://github.com/yylego/gormmom)** - 原生语言 GORM 命名把关器（gormzhcn 封装的底层引擎）
+- **[gormzhcn](https://github.com/yylego/gormzhcn)** - GORM 中文命名把关器（本包）
 
-这些包涵盖 GORM 开发的各个方面：本地化、类型保护和代码生成。
+这些包涵盖 GORM 开发的各个方面：本地化、类型保护和命名校验。
 
 ---
 
@@ -383,4 +247,3 @@ MIT 许可证 - 详见 [LICENSE](LICENSE)。
 ## GitHub Stars
 
 [![Stargazers](https://starchart.cc/yylego/gormzhcn.svg?variant=adaptive)](https://starchart.cc/yylego/gormzhcn)
-

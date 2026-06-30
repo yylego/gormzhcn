@@ -13,10 +13,10 @@ const (
 
 type T学生 struct {
 	ClassCode string `gorm:"column:class_code" cnm:"V班级编码"`
-	V学号       int    `gorm:"column:V_665B_F753;primaryKey;autoIncrement:true" cnm:"V学号" mom:"mcp:S63;"`
+	V学号       int    `gorm:"column:student_num;primaryKey;autoIncrement:true" cnm:"V学号"`
 	Name      string `gorm:"column:name" cnm:"V名字"`
-	V性别       T性别    `gorm:"column:V_2760_2B52;" cnm:"V性别" mom:"mcp:S63;"`
-	V生日       string `gorm:"column:V_1F75_E565;" cnm:"V生日" mom:"mcp:S63;"`
+	V性别       T性别    `gorm:"column:gender" cnm:"V性别"`
+	V生日       string `gorm:"column:birthday" cnm:"V生日"`
 }
 
 func (*T学生) TableName() string {
@@ -30,7 +30,7 @@ func (*T学生) TableName() string {
 type T班级 struct {
 	V班级编码 string `gorm:"column:class_code;primaryKey;"`
 	V班级名称 string `gorm:"column:class_name;unique"`
-	V班主任名 string `gorm:"column:V_ED73_3B4E_FB4E_0D54;unique;" mom:"mcp:S63;"`
+	V班主任名 string `gorm:"column:head_teacher;unique;"`
 }
 
 func (*T班级) TableName() string {
