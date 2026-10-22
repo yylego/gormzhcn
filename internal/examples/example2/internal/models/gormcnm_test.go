@@ -11,7 +11,7 @@ import (
 )
 
 func TestValidateGormMomAndGenCnm(t *testing.T) {
-	objects := []interface{}{
+	objects := []any{
 		&Example{},
 	}
 

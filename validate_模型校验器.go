@@ -16,7 +16,7 @@ type T模型校验器 struct {
 // NewT模型校验器 builds the batch from objects plus a config, parsing each through reflection.
 //
 // NewT模型校验器 用对象集合和配置构造批量校验器，逐个通过反射解析
-func NewT模型校验器(objects []interface{}, v配置项 *T配置项) *T模型校验器 {
+func NewT模型校验器(objects []any, v配置项 *T配置项) *T模型校验器 {
 	return &T模型校验器{
 		configs: gormmom.NewConfigs(objects, v配置项.GetOptions()),
 	}

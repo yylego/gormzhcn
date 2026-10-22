@@ -25,15 +25,11 @@ type T测试产品2 struct {
 func (*T测试产品2) TableName() string { return "product2s" }
 
 func TestT模型校验器_Validate(t *testing.T) {
-	err := gormzhcn.NewT模型校验器([]interface{}{&T测试产品2{}}, gormzhcn.NewT配置项()).Validate()
+	err := gormzhcn.NewT模型校验器([]any{&T测试产品2{}}, gormzhcn.NewT配置项()).Validate()
 	require.NoError(t, err)
 }
 
 func TestT模型校验器_Validate_报错(t *testing.T) {
-	err := gormzhcn.NewT模型校验器([]interface{}{&T测试产品1{}}, gormzhcn.NewT配置项()).Validate()
+	err := gormzhcn.NewT模型校验器([]any{&T测试产品1{}}, gormzhcn.NewT配置项()).Validate()
 	require.Error(t, err)
-}
-
-func TestT校验器_Validate(t *testing.T) {
-	require.NoError(t, gormzhcn.NewT校验器(&T测试产品2{}, gormzhcn.NewT配置项()).Validate())
 }

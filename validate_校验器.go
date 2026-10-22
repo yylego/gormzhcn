@@ -16,7 +16,7 @@ type T校验器 struct {
 // NewT校验器 prepares a single check from an object plus a config, parsing the object through reflection.
 //
 // NewT校验器 用对象和配置构造校验器，通过反射解析对象
-func NewT校验器(object interface{}, v配置项 *T配置项) *T校验器 {
+func NewT校验器(object any, v配置项 *T配置项) *T校验器 {
 	return &T校验器{
 		config: gormmom.NewConfig(object, v配置项.GetOptions()),
 	}

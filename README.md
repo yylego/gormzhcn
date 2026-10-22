@@ -1,9 +1,13 @@
+<!-- TEMPLATE (EN) BEGIN: BADGES -->
+
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/yylego/gormzhcn/release.yml?branch=main&label=BUILD)](https://github.com/yylego/gormzhcn/actions/workflows/release.yml?query=branch%3Amain)
 [![GoDoc](https://pkg.go.dev/badge/github.com/yylego/gormzhcn)](https://pkg.go.dev/github.com/yylego/gormzhcn)
 [![Coverage Status](https://img.shields.io/coveralls/github/yylego/gormzhcn/main.svg)](https://coveralls.io/github/yylego/gormzhcn?branch=main)
-[![Supported Go Versions](https://img.shields.io/badge/Go-1.25+-lightgrey.svg)](https://go.dev/)
+[![Supported Go Versions](https://img.shields.io/badge/Go-1.27%2B-lightgrey.svg)](https://go.dev/)
 [![GitHub Release](https://img.shields.io/github/release/yylego/gormzhcn.svg)](https://github.com/yylego/gormzhcn/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yylego/gormzhcn)](https://goreportcard.com/report/github.com/yylego/gormzhcn)
+
+<!-- TEMPLATE (EN) CLOSE: BADGES -->
 
 # 🇨🇳 GORMZHCN - Chinese GORM Naming Guardian
 
@@ -23,7 +27,7 @@
 
 [中文说明](README.zh.md)
 
-<!-- TEMPLATE (EN) END: LANGUAGE NAVIGATION -->
+<!-- TEMPLATE (EN) CLOSE: LANGUAGE NAVIGATION -->
 
 ---
 
@@ -97,7 +101,7 @@ gormzhcn opens no database connection; it runs as a plain unit test:
 
 ```go
 func TestValidateNaming(t *testing.T) {
-    objects := []interface{}{
+    objects := []any{
         &T账户信息{},
     }
 
@@ -128,13 +132,13 @@ gormzhcn guards the naming; its sibling packages handle type-safe columns and re
 **2. Guard the naming with gormzhcn** — a database-free unit test:
 
 ```go
-require.NoError(t, gormzhcn.NewT模型校验器([]interface{}{&T学生{}}, gormzhcn.NewT配置项()).Validate())
+require.NoError(t, gormzhcn.NewT模型校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
 ```
 
 **3. Generate type-safe columns with [gormcngen](https://github.com/yylego/gormcngen)**:
 
 ```go
-gormcngen.NewConfigs([]interface{}{&T学生{}}, gormcngen.NewOptions().WithUseTagName(true), srcPath).Gen()
+gormcngen.NewConfigs([]any{&T学生{}}, gormcngen.NewOptions().WithUseTagName(true), srcPath).Gen()
 // → produces T学生Columns with Chinese columns: V名字, V性别, V班级编码, ...
 ```
 
@@ -240,10 +244,4 @@ Welcome to contribute to this project via submitting merge requests and reportin
 
 **Have Fun Coding with this package!** 🎉🎉🎉
 
-<!-- TEMPLATE (EN) END: STANDARD PROJECT FOOTER -->
-
----
-
-## GitHub Stars
-
-[![Stargazers](https://starchart.cc/yylego/gormzhcn.svg?variant=adaptive)](https://starchart.cc/yylego/gormzhcn)
+<!-- TEMPLATE (EN) CLOSE: STANDARD PROJECT FOOTER -->

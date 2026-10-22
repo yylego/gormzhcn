@@ -1,9 +1,13 @@
+<!-- TEMPLATE (ZH) BEGIN: BADGES -->
+
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/yylego/gormzhcn/release.yml?branch=main&label=BUILD)](https://github.com/yylego/gormzhcn/actions/workflows/release.yml?query=branch%3Amain)
 [![GoDoc](https://pkg.go.dev/badge/github.com/yylego/gormzhcn)](https://pkg.go.dev/github.com/yylego/gormzhcn)
 [![Coverage Status](https://img.shields.io/coveralls/github/yylego/gormzhcn/main.svg)](https://coveralls.io/github/yylego/gormzhcn?branch=main)
-[![Supported Go Versions](https://img.shields.io/badge/Go-1.25+-lightgrey.svg)](https://go.dev/)
+[![Supported Go Versions](https://img.shields.io/badge/Go-1.27%2B-lightgrey.svg)](https://go.dev/)
 [![GitHub Release](https://img.shields.io/github/release/yylego/gormzhcn.svg)](https://github.com/yylego/gormzhcn/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/yylego/gormzhcn)](https://goreportcard.com/report/github.com/yylego/gormzhcn)
+
+<!-- TEMPLATE (ZH) CLOSE: BADGES -->
 
 # 🇨🇳 GORMZHCN - GORM 中文命名把关器
 
@@ -23,7 +27,7 @@
 
 [ENGLISH README](README.md)
 
-<!-- TEMPLATE (ZH) END: LANGUAGE NAVIGATION -->
+<!-- TEMPLATE (ZH) CLOSE: LANGUAGE NAVIGATION -->
 
 ---
 
@@ -97,7 +101,7 @@ gormzhcn 从不连接数据库，它作为一个普通单元测试运行：
 
 ```go
 func TestValidateNaming(t *testing.T) {
-    objects := []interface{}{
+    objects := []any{
         &T账户信息{},
     }
 
@@ -128,13 +132,13 @@ gormzhcn 负责把关命名，兄弟包负责类型安全列和 CRUD。一个典
 **2. 用 gormzhcn 把关命名**——不连数据库的单元测试：
 
 ```go
-require.NoError(t, gormzhcn.NewT模型校验器([]interface{}{&T学生{}}, gormzhcn.NewT配置项()).Validate())
+require.NoError(t, gormzhcn.NewT模型校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
 ```
 
 **3. 用 [gormcngen](https://github.com/yylego/gormcngen) 生成类型安全列**：
 
 ```go
-gormcngen.NewConfigs([]interface{}{&T学生{}}, gormcngen.NewOptions().WithUseTagName(true), srcPath).Gen()
+gormcngen.NewConfigs([]any{&T学生{}}, gormcngen.NewOptions().WithUseTagName(true), srcPath).Gen()
 // → 生成带中文访问器的 T学生Columns：V名字、V性别、V班级编码……
 ```
 
@@ -240,10 +244,4 @@ MIT 许可证 - 详见 [LICENSE](LICENSE)。
 
 **祝你用这个包编程愉快！** 🎉🎉🎉
 
-<!-- TEMPLATE (ZH) END: STANDARD PROJECT FOOTER -->
-
----
-
-## GitHub Stars
-
-[![Stargazers](https://starchart.cc/yylego/gormzhcn.svg?variant=adaptive)](https://starchart.cc/yylego/gormzhcn)
+<!-- TEMPLATE (ZH) CLOSE: STANDARD PROJECT FOOTER -->
