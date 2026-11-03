@@ -1,11 +1,12 @@
+// Package example2 shows gormzhcn with Chinese fields and no cnm tags: the generated columns keep the field names
+//
+// example2 演示不写 cnm 标签的中文字段：生成的列沿用字段名
 package example2
 
 import (
 	"fmt"
-	"math/rand/v2"
 	"testing"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/yylego/done"
@@ -34,46 +35,34 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestUsage(t *testing.T) {
-	examples := make([]*models.Example, 0, 10)
-	for i := 0; i < 10; i++ {
-		one := newFakeExample(t)
-		t.Log(neatjsons.S(one))
+func TestUse(t *testing.T) {
+	for idx := range 10 {
+		one := &models.Example{
+			V名称: fmt.Sprintf("示例-%d", idx),
+			V性别: "女",
+			V年龄: 18 + idx,
+			V身高: 160,
+			V体重: 50,
+		}
 		require.NoError(t, caseDB.Create(one).Error)
-		examples = append(examples, one)
 	}
 
 	repo := gormrepo.NewRepo(gormclass.Use(&models.Example{}))
 
 	t.Run("select-first", func(t *testing.T) {
-		name := examples[rand.IntN(len(examples))].V名称
-
-		example, err := repo.Repo(caseDB).First(func(db *gorm.DB, cls *models.ExampleColumns) *gorm.DB {
-			return db.Where(cls.V名称.Eq(name))
+		example, err := repo.With(t.Context(), caseDB).First(func(db *gorm.DB, cls *models.ExampleColumns) *gorm.DB {
+			return db.Where(cls.V名称.Eq("示例-3"))
 		})
 		require.NoError(t, err)
+		require.Equal(t, 21, example.V年龄)
 		t.Log(neatjsons.S(example))
 	})
 	t.Run("select-where-in", func(t *testing.T) {
-		var names = make([]string, 0, 5)
-		for idx, one := range examples {
-			if idx%2 == 0 {
-				continue
-			}
-			names = append(names, one.V名称)
-		}
-
-		results, err := repo.Repo(caseDB).Find(func(db *gorm.DB, cls *models.ExampleColumns) *gorm.DB {
-			return db.Where(cls.V名称.In(names))
+		examples, err := repo.With(t.Context(), caseDB).Find(func(db *gorm.DB, cls *models.ExampleColumns) *gorm.DB {
+			return db.Where(cls.V名称.In([]string{"示例-1", "示例-5", "示例-9"}))
 		})
 		require.NoError(t, err)
-		t.Log(neatjsons.S(results))
+		require.Len(t, examples, 3)
+		t.Log(neatjsons.S(examples))
 	})
-}
-
-func newFakeExample(t *testing.T) *models.Example {
-	a := &models.Example{}
-	require.NoError(t, gofakeit.Struct(a))
-	a.ID = 0 // 设置为0以便于使用 gorm 创建数据
-	return a
 }

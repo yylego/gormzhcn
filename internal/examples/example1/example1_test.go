@@ -1,3 +1,6 @@
+// Package example1 shows gormzhcn with Chinese fields and cnm tag aliases: the structs pass the check, then work with GORM through the generated columns
+//
+// example1 演示中文字段加 cnm 标签别名的 gormzhcn 用法：结构体通过校验，之后用生成的列照常配合 GORM 使用
 package example1
 
 import (
@@ -46,64 +49,61 @@ func TestMain(m *testing.M) {
 
 	done.Done(db.Save(&models.T学生{
 		ClassCode: "LOVE",
-		V学号:       0,
 		Name:      "杨亦乐",
 		V性别:       models.M男性,
 		V生日:       "1990-08-08",
 	}).Error)
 	done.Done(db.Save(&models.T学生{
 		ClassCode: "LOVE",
-		V学号:       0,
-		Name:      "刘亦菲",
+		Name:      "李小美",
 		V性别:       models.F女性,
-		V生日:       "1987-08-25",
+		V生日:       "1992-05-20",
 	}).Error)
 	done.Done(db.Save(&models.T学生{
 		ClassCode: "HANDSOME",
-		V学号:       0,
-		Name:      "古天乐",
+		Name:      "张小帅",
 		V性别:       models.M男性,
-		V生日:       "1970-10-21",
+		V生日:       "1991-10-21",
 	}).Error)
 
 	caseDB = db
 	m.Run()
 }
 
-func TestSelect(t *testing.T) {
-	res, err := repo学生.Repo(caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
+func TestFirst_按名字(t *testing.T) {
+	res, err := repo学生.With(t.Context(), caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
 		return db.Where(cls.V名字.Eq("杨亦乐"))
 	})
 	require.NoError(t, err)
-	require.Equal(t, "杨亦乐", res.Name)
+	require.Equal(t, "LOVE", res.ClassCode)
 	t.Log(neatjsons.S(res))
 }
 
-func TestSelect_x2x(t *testing.T) {
-	res, err := repo学生.Repo(caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
-		return db.Where(cls.V名字.Eq("刘亦菲")).Where(cls.V性别.Eq(models.F女性))
+func TestFirst_按名字和性别(t *testing.T) {
+	res, err := repo学生.With(t.Context(), caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
+		return db.Where(cls.V名字.Eq("李小美")).Where(cls.V性别.Eq(models.F女性))
 	})
 	require.NoError(t, err)
-	require.Equal(t, "刘亦菲", res.Name)
+	require.Equal(t, "1992-05-20", res.V生日)
 	t.Log(neatjsons.S(res))
 }
 
-func TestSelect_x3x(t *testing.T) {
-	res, err := repo学生.Repo(caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
-		return db.Where(cls.V名字.Eq("古天乐")).Where(cls.V性别.Eq(models.F女性))
+func TestFirst_查不到(t *testing.T) {
+	res, err := repo学生.With(t.Context(), caseDB).First(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
+		return db.Where(cls.V名字.Eq("张小帅")).Where(cls.V性别.Eq(models.F女性))
 	})
 	require.ErrorIs(t, err, gorm.ErrRecordNotFound)
 	require.Nil(t, res)
 }
 
-func TestSelect_x4x(t *testing.T) {
-	v恋爱班级, err := repo班级.Repo(caseDB).First(func(db *gorm.DB, cls *models.T班级Columns) *gorm.DB {
+func TestFind_按班级(t *testing.T) {
+	v恋爱班级, err := repo班级.With(t.Context(), caseDB).First(func(db *gorm.DB, cls *models.T班级Columns) *gorm.DB {
 		return db.Where(cls.V班级编码.Eq("LOVE"))
 	})
 	require.NoError(t, err)
-	t.Log(neatjsons.S(v恋爱班级))
+	require.Equal(t, "月老", v恋爱班级.V班主任名)
 
-	students, err := repo学生.Repo(caseDB).Find(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
+	students, err := repo学生.With(t.Context(), caseDB).Find(func(db *gorm.DB, cls *models.T学生Columns) *gorm.DB {
 		return db.Where(cls.V班级编码.Eq(v恋爱班级.V班级编码))
 	})
 	require.NoError(t, err)

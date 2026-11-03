@@ -7,10 +7,9 @@ const (
 	F女性 T性别 = "女"
 )
 
-/*
-假设开发者英语水平不高，只会些塑料英语，甚至有字段名对齐的强迫症，则允许开发者使用别名
-*/
-
+// T学生 mixes English fields and Chinese fields, and the cnm tags give each column a Chinese alias, so each generated column has a Chinese name: V班级编码, V名字, ...
+//
+// T学生 的字段英文、中文都有，cnm 标签给每一列起了中文别名，生成的列就都是中文：V班级编码、V名字……
 type T学生 struct {
 	ClassCode string `gorm:"column:class_code" cnm:"V班级编码"`
 	V学号       int    `gorm:"column:student_num;primaryKey;autoIncrement:true" cnm:"V学号"`
@@ -23,14 +22,13 @@ func (*T学生) TableName() string {
 	return "students"
 }
 
-/*
-彻底放弃治疗直接使用汉语编程，毕竟汉语天然的表意比较全面，而且非常精悍，而且字段名长度相同有利于代码对齐和整洁（这点对强迫症非常友善）
-*/
-
+// T班级 has Chinese fields alone, and gives each column an explicit database-safe ASCII name
+//
+// T班级 的字段全用中文，每一列都显式给了数据库安全的 ASCII 名字
 type T班级 struct {
-	V班级编码 string `gorm:"column:class_code;primaryKey;"`
+	V班级编码 string `gorm:"column:class_code;primaryKey"`
 	V班级名称 string `gorm:"column:class_name;unique"`
-	V班主任名 string `gorm:"column:head_teacher;unique;"`
+	V班主任名 string `gorm:"column:head_teacher;unique"`
 }
 
 func (*T班级) TableName() string {

@@ -1,9 +1,6 @@
-// Package gormzhcn gives gormmom naming validation a Chinese-localized interface.
-// Write GORM models with native-language fields, then validate that the table name,
-// each column name and each index name stays database-safe — through intuitive
-// Chinese type and method names, built on top of gormmom.
+// Package gormzhcn gives the gormmom naming check Chinese type and method names.
+// Write GORM models with Chinese fields, then check that the table name, each column name and each index name stays database-safe (ASCII letters, digits, underscore).
 //
-// gormzhcn 是 gormmom 命名校验的中文本地化封装
-// 用母语字段编写 GORM 模型，再校验表名、每个列名和每个索引名是否数据库安全，
-// 全程通过直观的中文类型名和方法名完成，底层基于 gormmom 构建
+// gormzhcn 给 gormmom 的命名校验配上中文的类型名和方法名
+// 用中文字段编写 GORM 模型，再检查表名、每个列名和每个索引名是否数据库安全（ASCII 字母、数字、下划线）
 package gormzhcn

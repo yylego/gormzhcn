@@ -10,7 +10,7 @@ import (
 // T校验器 通过中文接口校验单个模型
 // 封装 gormmom.Config 单独校验一个模型
 type T校验器 struct {
-	config *gormmom.Config // Native config instance // 内部配置处理器
+	config *gormmom.Config // The gormmom config it wraps // 封装的 gormmom 配置
 }
 
 // NewT校验器 prepares a single check from an object plus a config, parsing the object through reflection.
@@ -18,7 +18,7 @@ type T校验器 struct {
 // NewT校验器 用对象和配置构造校验器，通过反射解析对象
 func NewT校验器(object any, v配置项 *T配置项) *T校验器 {
 	return &T校验器{
-		config: gormmom.NewConfig(object, v配置项.GetOptions()),
+		config: gormmom.NewConfig(object, v配置项.options),
 	}
 }
 

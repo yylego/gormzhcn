@@ -3,7 +3,7 @@
 
 //go:build !gormcngen_generate
 
-// Generated from: gormcnm_test.go:36 -> models.TestValidateGormMomAndGenCnm.func2
+// Generated from: models.gen_test.go:33 -> models.TestGenerateModels.func2
 // ========== GORMCNGEN:DO-NOT-EDIT-MARKER:END ==========
 
 package models

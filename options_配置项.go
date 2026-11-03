@@ -11,7 +11,7 @@ import (
 // T配置项 代表带中文接口的校验设置
 // 封装 gormmom.Options 以提供直观的中文方法名
 type T配置项 struct {
-	options *gormmom.Options // Native options instance // 内部选项处理器
+	options *gormmom.Options // The gormmom options it wraps // 封装的 gormmom 选项
 }
 
 // NewT配置项 creates a new configuration with default settings.
@@ -24,12 +24,12 @@ func NewT配置项() *T配置项 {
 }
 
 // With最大名字长度 sets the name length cap and returns the config to chain.
-// Databases reject a table, column, index name beyond this length.
+// Databases reject a table, column, index name beyond this length. The cap must be positive.
 //
 // With最大名字长度 设置名字长度上限，返回自身以便链式调用
-// 超过该长度的表名、列名或索引名数据库不接受
-func (opt *T配置项) With最大名字长度(maxNameLength int) *T配置项 {
-	opt.options.WithMaxNameLength(maxNameLength)
+// 超过该长度的表名、列名或索引名数据库不接受，上限必须为正数
+func (opt *T配置项) With最大名字长度(maxIdentLength int) *T配置项 {
+	opt.options.WithMaxIdentLength(maxIdentLength)
 	return opt
 }
 
@@ -41,11 +41,4 @@ func (opt *T配置项) With最大名字长度(maxNameLength int) *T配置项 {
 func (opt *T配置项) With命名策略(namingStrategy schema.Namer) *T配置项 {
 	opt.options.WithNamingStrategy(namingStrategy)
 	return opt
-}
-
-// GetOptions returns the underlying gormmom.Options instance.
-//
-// GetOptions 返回底层的 gormmom.Options 实例
-func (opt *T配置项) GetOptions() *gormmom.Options {
-	return opt.options
 }

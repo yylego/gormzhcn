@@ -9,7 +9,7 @@
 
 <!-- TEMPLATE (ZH) CLOSE: BADGES -->
 
-# 🇨🇳 GORMZHCN - GORM 中文命名把关器
+# GORMZHCN - GORM 中文命名把关器
 
 **gormzhcn** 是 gormmom 命名校验的**中文本地化封装**。用母语中文字段编写 GORM 模型，再**把关**模型产出的每一个数据库名字——表名、每个列名、每个索引名——都是数据库安全的，全程通过直观的中文类型名和方法名完成。它作为一个普通单元测试运行，**完全不连接数据库**。
 
@@ -37,19 +37,11 @@
 
 ---
 
-## 🤖 为什么 gormzhcn 现在只是个把关器（AI 时代的简化）
+## 🤖 设计意图
 
-gormzhcn 过去封装的是一个**生成引擎**：你用中文写字段、把 tag 留空，它替你自动拼出列名和索引名（拼音和基于模式的编码）。
+gormzhcn 过去会替你用拼音拼出列名和索引名。现在你定义字段的那一刻，AI 助手就能写出又好又数据库安全的名字，所以生成这一层已经去掉了。
 
-**AI 时代让这种生成失去了意义。** 今天，你定义字段的那一刻，AI 助手就能直接、结合上下文，替你写出一个又好又数据库安全的列名——远比任何固定规则引擎拼出来的强。机器生成的 `z_zhang_hao` 从来就不是谁真正想要的。于是整个生成层就没有存在的理由了。
-
-而 AI **不会**自动替你保证的，恰恰是那个仍然会咬你一口的环节：**校验**。当你用中文编程时，GORM 可能把字段变成一个非 ASCII 的列名，或者用中文字段名拼出一个复合索引名——这两种数据库都会拒绝。这种问题暴露得很晚，往往是在迁移或运行时才炸。
-
-所以 gormzhcn 彻底砍掉了生成，现在只做一件事：**在一个不连数据库的单元测试里，把这些命名问题抓出来**，让它们不会在后面才爆炸。
-
-- ❌ 已移除：代码生成、拼音/模式列名拼装、旧的编码器类型。
-- ✅ 已保留：唯一职责——校验表名 / 列名 / 索引名是否数据库安全。
-- ✅ 零数据库连接——一个纯静态检查，作为普通单元测试运行。
+仍然会出问题的是漏网的名字：字段没写列名、索引没写名字，GORM 就会产出非 ASCII 的名字，数据库要到迁移或运行时才拒绝。gormzhcn 只做这一项检查，在不连数据库的单元测试里完成，底层用的是 [gormmom](https://github.com/yylego/gormmom)，gormzhcn 给它配上中文的类型名和方法名。
 
 ---
 
@@ -106,7 +98,7 @@ func TestValidateNaming(t *testing.T) {
     }
 
     // 批量把关：表名 / 列名 / 索引名都必须数据库安全
-    require.NoError(t, gormzhcn.NewT模型校验器(objects, gormzhcn.NewT配置项()).Validate())
+    require.NoError(t, gormzhcn.NewT批量校验器(objects, gormzhcn.NewT配置项()).Validate())
 
     // 也可以单独校验一个模型
     require.NoError(t, gormzhcn.NewT校验器(&T账户信息{}, gormzhcn.NewT配置项()).Validate())
@@ -118,7 +110,7 @@ func TestValidateNaming(t *testing.T) {
 ```go
 v配置项 := gormzhcn.NewT配置项().
     With最大名字长度(63).                  // 名字长度上限（Postgres 为 63）
-    With命名策略(schema.NamingStrategy{}) // 项目用了自定义命名策略时传进来
+    With命名策略(schema.NamingStrategy{}) // 传入项目里 GORM 用的命名策略
 ```
 
 ---
@@ -132,7 +124,7 @@ gormzhcn 负责把关命名，兄弟包负责类型安全列和 CRUD。一个典
 **2. 用 gormzhcn 把关命名**——不连数据库的单元测试：
 
 ```go
-require.NoError(t, gormzhcn.NewT模型校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
+require.NoError(t, gormzhcn.NewT批量校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
 ```
 
 **3. 用 [gormcngen](https://github.com/yylego/gormcngen) 生成类型安全列**：
@@ -146,27 +138,35 @@ gormcngen.NewConfigs([]any{&T学生{}}, gormcngen.NewOptions().WithUseTagName(tr
 
 ```go
 repo := gormrepo.NewRepo(gormclass.Use(&T学生{}))
-student, err := repo.Repo(db).First(func(db *gorm.DB, cls *T学生Columns) *gorm.DB {
+student, err := repo.With(ctx, db).First(func(db *gorm.DB, cls *T学生Columns) *gorm.DB {
     return db.Where(cls.V名字.Eq("杨亦乐"))
 })
 ```
 
-完整可运行的示例都在 [examples](internal/examples/) 里。
+生成测试会先跑校验，通过了才生成列，见 [example1](internal/examples/example1/internal/models/models.gen_test.go)。
+
+---
+
+## 📝 完整示例
+
+| 示例                                   | 讲什么                                                        |
+| -------------------------------------- | ------------------------------------------------------------- |
+| [example1](internal/examples/example1) | 中文字段加 cnm 标签别名：通过校验，再用生成的列配合 GORM 查询 |
+| [example2](internal/examples/example2) | 中文字段不写 cnm 标签：生成的列沿用字段名                     |
 
 ---
 
 ## 🔧 API 参考
 
-| 中文名                            | 封装                 | 说明                     |
-| --------------------------------- | -------------------- | ------------------------ |
-| `NewT模型校验器(objects, 配置项)` | `gormmom.NewConfigs` | 构造批量校验器           |
-| `T模型校验器.Validate()`          | `Configs.Validate`   | 校验整批模型             |
-| `NewT校验器(object, 配置项)`      | `gormmom.NewConfig`  | 构造单模型校验器         |
-| `T校验器.Validate()`              | `Config.Validate`    | 校验单个模型             |
-| `NewT配置项()`                    | `gormmom.NewOptions` | 构造配置                 |
-| `With最大名字长度(n)`             | `WithMaxNameLength`  | 设置名字长度上限         |
-| `With命名策略(namer)`             | `WithNamingStrategy` | 设置 GORM 命名策略       |
-| `GetOptions()`                    | —                    | 取底层 `gormmom.Options` |
+| 中文名                            | 封装                 | 说明               |
+| --------------------------------- | -------------------- | ------------------ |
+| `NewT批量校验器(objects, 配置项)` | `gormmom.NewConfigs` | 构造批量校验器     |
+| `T批量校验器.Validate()`          | `Configs.Validate`   | 校验整批模型       |
+| `NewT校验器(object, 配置项)`      | `gormmom.NewConfig`  | 构造单模型校验器   |
+| `T校验器.Validate()`              | `Config.Validate`    | 校验单个模型       |
+| `NewT配置项()`                    | `gormmom.NewOptions` | 构造配置           |
+| `With最大名字长度(n)`             | `WithMaxIdentLength` | 设置名字长度上限   |
+| `With命名策略(namer)`             | `WithNamingStrategy` | 设置 GORM 命名策略 |
 
 ---
 

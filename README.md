@@ -9,7 +9,7 @@
 
 <!-- TEMPLATE (EN) CLOSE: BADGES -->
 
-# 🇨🇳 GORMZHCN - Chinese GORM Naming Guardian
+# GORMZHCN - Chinese GORM Naming Guardian
 
 **gormzhcn** puts a **Chinese-localized interface** on gormmom naming validation. Write GORM models with native Chinese fields, then **guard** that each database name a struct produces — the table name, each column name, each index name — stays database-safe, through intuitive Chinese type and method names. It runs as a plain unit test and touches no database.
 
@@ -37,19 +37,11 @@ Writing Go code in Chinese is a viable technique, but something to avoid in prod
 
 ---
 
-## 🤖 How gormzhcn became just a guardian (the AI-era simplification)
+## 🤖 Design Intent
 
-gormzhcn used to wrap a **generation engine**: you wrote Chinese fields, tags left blank, and it auto-synthesized the column names and index names on its own (pinyin and pattern-based encodings).
+gormzhcn used to generate the column names and index names in pinyin. Now an AI assistant writes a good database-safe name the moment you define the field, so that generation is gone.
 
-**The AI era made that generation pointless.** The moment you define a field, an AI assistant gives you a good, database-safe column name — in context, a cut above a fixed rule engine. A machine-synthesized `z_zhang_hao` was not what someone wanted. So the entire generation step lost its reason to exist.
-
-What AI does **not** hand you on its own is the part that bites: **validation**. When you program in Chinese, GORM might turn a field into a non-ASCII column name, and it can build a composite index name out of Chinese field names — names the database rejects. That failure shows up late, at migration time, at runtime.
-
-So gormzhcn dropped generation outright and now does just one thing: **catch those naming problems in a database-free unit test**, so none of them blow up in production.
-
-- ❌ Gone: code generation, pinyin/pattern column synthesis, the old code-gen types.
-- ✅ Kept: one job — validate that the table / column / index names are database-safe.
-- ✅ Zero database connection — a pure static check that runs as a plain unit test.
+What can go wrong is a name that slips through: a field with no column name, and an index with no name, both give a non-ASCII name that the database rejects late, at migration / at runtime. gormzhcn does that one check, in a unit test with no database. The check comes from [gormmom](https://github.com/yylego/gormmom); gormzhcn gives it Chinese type and method names.
 
 ---
 
@@ -106,7 +98,7 @@ func TestValidateNaming(t *testing.T) {
     }
 
     // Guard a batch: table / column / index names must be database-safe.
-    require.NoError(t, gormzhcn.NewT模型校验器(objects, gormzhcn.NewT配置项()).Validate())
+    require.NoError(t, gormzhcn.NewT批量校验器(objects, gormzhcn.NewT配置项()).Validate())
 
     // Guard a single struct on its own.
     require.NoError(t, gormzhcn.NewT校验器(&T账户信息{}, gormzhcn.NewT配置项()).Validate())
@@ -117,8 +109,8 @@ A failing name comes back as a precise message — naming the struct, the offend
 
 ```go
 v配置项 := gormzhcn.NewT配置项().
-    With最大名字长度(63).        // name length cap (Postgres uses 63)
-    With命名策略(schema.NamingStrategy{}) // pass a custom strategy when a project needs one
+    With最大名字长度(63).                  // name length cap (Postgres uses 63)
+    With命名策略(schema.NamingStrategy{}) // pass the strategy the project runs GORM with
 ```
 
 ---
@@ -132,7 +124,7 @@ gormzhcn guards the naming; its sibling packages handle type-safe columns and re
 **2. Guard the naming with gormzhcn** — a database-free unit test:
 
 ```go
-require.NoError(t, gormzhcn.NewT模型校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
+require.NoError(t, gormzhcn.NewT批量校验器([]any{&T学生{}}, gormzhcn.NewT配置项()).Validate())
 ```
 
 **3. Generate type-safe columns with [gormcngen](https://github.com/yylego/gormcngen)**:
@@ -146,27 +138,35 @@ gormcngen.NewConfigs([]any{&T学生{}}, gormcngen.NewOptions().WithUseTagName(tr
 
 ```go
 repo := gormrepo.NewRepo(gormclass.Use(&T学生{}))
-student, err := repo.Repo(db).First(func(db *gorm.DB, cls *T学生Columns) *gorm.DB {
+student, err := repo.With(ctx, db).First(func(db *gorm.DB, cls *T学生Columns) *gorm.DB {
     return db.Where(cls.V名字.Eq("杨亦乐"))
 })
 ```
 
-Complete runnable examples live in [examples](internal/examples/).
+The generation test runs the check first and generates the columns just when it passes, see [example1](internal/examples/example1/internal/models/models.gen_test.go).
+
+---
+
+## 📝 Complete Examples
+
+| Example                                | Topic                                                                                                    |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| [example1](internal/examples/example1) | Chinese fields with cnm tag aliases: pass the check, then run GORM queries through the generated columns |
+| [example2](internal/examples/example2) | Chinese fields with no cnm tags: the generated columns keep the field names                              |
 
 ---
 
 ## 🔧 API Reference
 
-| Chinese name                      | Wraps                | Description                             |
-| --------------------------------- | -------------------- | --------------------------------------- |
-| `NewT模型校验器(objects, 配置项)` | `gormmom.NewConfigs` | Build a batch check                     |
-| `T模型校验器.Validate()`          | `Configs.Validate`   | Validate the whole batch                |
-| `NewT校验器(object, 配置项)`      | `gormmom.NewConfig`  | Build a single-struct check             |
-| `T校验器.Validate()`              | `Config.Validate`    | Validate one struct                     |
-| `NewT配置项()`                    | `gormmom.NewOptions` | Build a config                          |
-| `With最大名字长度(n)`             | `WithMaxNameLength`  | Set the name length cap                 |
-| `With命名策略(namer)`             | `WithNamingStrategy` | Set the GORM naming strategy            |
-| `GetOptions()`                    | —                    | Access the underlying `gormmom.Options` |
+| Chinese name                      | Wraps                | Description                  |
+| --------------------------------- | -------------------- | ---------------------------- |
+| `NewT批量校验器(objects, 配置项)` | `gormmom.NewConfigs` | Build a batch check          |
+| `T批量校验器.Validate()`          | `Configs.Validate`   | Validate the whole batch     |
+| `NewT校验器(object, 配置项)`      | `gormmom.NewConfig`  | Build a single-struct check  |
+| `T校验器.Validate()`              | `Config.Validate`    | Validate one struct          |
+| `NewT配置项()`                    | `gormmom.NewOptions` | Build a config               |
+| `With最大名字长度(n)`             | `WithMaxIdentLength` | Set the name length cap      |
+| `With命名策略(namer)`             | `WithNamingStrategy` | Set the GORM naming strategy |
 
 ---
 
